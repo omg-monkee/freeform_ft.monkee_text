@@ -1,15 +1,16 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php
 
-class Monkee_text_freeform_ft extends Freeform_base_ft {
+class Monkee_text_freeform_ft extends Freeform_base_ft
+{
 	public 	$info 	= array(
 		'name' 			=> 'Monk-ee Text',
 		'version' 		=> '3.0.0', //Modified Freeform Text 5.1.0
 		'description' 		=> 'Modified version of the default Freeform Text fieldtype.'
 	);
 
-	public $default_length 	= '150';
+	public $default_length	= '150';
 
-	public $field_content_types 	= array(
+	public $field_content_types	= array(
 		'any',
 		'date',
 		'decimal',
@@ -23,35 +24,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 		'time24',
 		'url',
 		'usd',
-		'zip',
-	);
-	
-	public $javascript_events = array(
-		'none',
-		'onblur',
-		'onchange',
-		'onclick',
-		'oncontextmenu',
-		'ondblclick',
-		'onfocus',
-		'onfocusin',
-		'onfocusout',
-		'oninput',
-		'oninvalid',
-		'onkeydown',
-		'onkeypress',
-		'onkeyup',
-		'onmousedown',
-		'onmouseenter',
-		'onmouseleave',
-		'onmousemove',
-		'onmouseover',
-		'onmouseout',
-		'onmouseup',
-		'onreset',
-		'onsearch',
-		'onselect',
-		'onsubmit'
+		'zip'
 	);
 
 
@@ -64,11 +37,12 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	 * @return	null
 	 */
 
-	public function __construct () {
+	public function __construct ()
+	{
 		parent::__construct();
 
-		$this->info['name'] 		= lang('monktext_default_field_name');
-		$this->info['description'] 	= lang('monktext_default_field_desc');
+		$this->info['name']		= lang('monktext_default_field_name');
+		$this->info['description']	= lang('monktext_default_field_desc');
 	}
 	//END __construct
 
@@ -81,11 +55,12 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	 * formats data for cp entry
 	 *
 	 * @access	public
-	 * @param 	string 	data from table for email output
-	 * @return	string 	output data
+	 * @param	string	data from table for email output
+	 * @return	string	output data
 	 */
 
-	public function display_entry_cp ($data) {
+	public function display_entry_cp ($data)
+	{
 		if (isset($this->settings['disallow_html_rendering']) AND
 			$this->settings['disallow_html_rendering'] == 'n')
 		{
@@ -105,9 +80,9 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	 * Replace Tag
 	 *
 	 * @access	public
-	 * @param	string 	data
-	 * @param 	array 	params from tag
- 	 * @param 	string 	tagdata if there is a tag pair
+	 * @param	string	data
+	 * @param	array	params from tag
+	 * @param	string	tagdata if there is a tag pair
 	 * @return	string
 	 */
 
@@ -132,10 +107,10 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	 * Display Field
 	 *
 	 * @access	public
-	 * @param	string 	saved data input
-	 * @param  	array 	input params from tag
-	 * @param 	array 	attribute params from tag
-	 * @return	string 	display output
+	 * @param	string	saved data input
+	 * @param 	array	input params from tag
+	 * @param	array	attribute params from tag
+	 * @return	string	display output
 	 */
 
 	public function display_field ($data = '', $params = array(), $attr = array())
@@ -212,10 +187,9 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			'maxlength'		=> isset($this->settings['field_length']) ?
 								$this->settings['field_length'] :
 								$this->default_length
-		), $attr));$text_field = array();
+		), $attr));
 	}
 	//END display_composer_field
-
 
 
 	// --------------------------------------------------------------------
@@ -230,14 +204,15 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 
 	public function display_settings ($data = array())
 	{
+
 		$sub_settings = array();
 
 		$form_radios	= '';
-		
-		$content_type 	= isset($data['field_content_type']) ?
+
+		$content_type	= isset($data['field_content_type']) ?
 							$data['field_content_type'] :
 							'any';
-		
+
 		//Field Content Type
 		$choices = array();
 
@@ -245,10 +220,10 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 		{
 			$choices[$type] = $type;
 		}
-		
+
 		$sub_settings['field_content_type'] = array(
-			'title'		=> 'monktext_field_content_type',
-			'desc'		=> 'monktext_field_content_type_desc',
+			'title'		=> 'field_content_type',
+			'desc'		=> 'field_content_type_desc',
 			'attrs'		=> array('id' => 'field_content_type'),
 			'fields'	=> array(
 				'field_content_type'	=> array(
@@ -259,11 +234,11 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 				)
 			)
 		);
-		
+
 		//Field Length
 		$sub_settings['field_length'] = array(
-			'title'		=> 'monktext_field_length',
-			'desc'		=> 'monktext_field_length_desc',
+			'title'		=> 'field_length',
+			'desc'		=> 'field_length_desc',
 			'attrs'		=> array('id' => 'field_length'),
 			'fields'	=> array(
 				'field_length'	=> array(
@@ -285,8 +260,8 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			$data['disallow_html_rendering'];
 
 		$sub_settings['disallow_html_rendering'] = array(
-			'title'		=> 'monktext_disallow_html_rendering',
-			'desc'		=> 'monktext_disallow_html_rendering_desc',
+			'title'		=> 'disallow_html_rendering',
+			'desc'		=> 'disallow_html_rendering_desc',
 			'attrs'		=> array('id' => 'disallow_html_rendering'),
 			'fields'	=> array(
 				'disallow_html_rendering'	=> array(
@@ -297,7 +272,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 				)
 			)
 		);
-			
+		
 		//Placeholder
 		$placeholder 		= ( ! isset($data['placeholder']) OR
 						$data['placeholder'] == '') ?
@@ -600,7 +575,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 				)
 			)
 		);
-		
+
 		//Return
 		$settings = array(
 			$this->field_name => array(
@@ -627,9 +602,9 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	public function save_settings ($data = array())
 	{
 		//max field length
-		$field_length 	= ee()->input->get_post('field_length');
+		$field_length	= ee()->input->get_post('field_length');
 
-		$field_length 	= (
+		$field_length	= (
 			is_numeric($field_length) AND
 			$field_length > 0 AND
 			$field_length < 9999
@@ -642,7 +617,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			$this->field_content_types) ?
 				$field_content_type :
 				'any';
-				
+
 		$field_title = ee()->input->get_post('field_title');
 		if ($field_title == 'field_label') {
 			$title = ee()->input->get_post('field_label'); 
@@ -694,8 +669,8 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 	 * validate
 	 *
 	 * @access	public
-	 * @param	string $data 	data to validate
-	 * @return	bool  			validated?
+	 * @param	string $data	data to validate
+	 * @return	bool 			validated?
 	 */
 
 	public function validate ($data)
@@ -717,7 +692,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			$this->errors[] = str_replace(
 				'%num%',
 				$this->settings['field_length'],
-				lang('monktext_max_length_exceeded')
+				lang('max_length_exceeded')
 			);
 
 			return $this->errors;
@@ -745,13 +720,13 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			{
 				if ( ! preg_match( '/^[\-+]?[0-9]*\.?[0-9]+$/', $data))
 				{
-					return lang('monktext_not_a_decimal');
+					return lang('not_a_decimal');
 				}
 
 				// Check if number exceeds mysql limits
 				/*if ($data >= 999999.9999)
 				{
-					$this->errors[] = lang('monktext_number_exceeds_limit');
+					$this->errors[] = lang('number_exceeds_limit');
 					return FALSE;
 				}*/
 			}
@@ -760,14 +735,14 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 				//if (($data < -2147483648) OR ($data > 2147483647))
 				if ( ! preg_match( '/^[\-+]?[0-9]+$/', $data))
 				{
-					return lang('monktext_not_an_integer');
+					return lang('not_an_integer');
 				}
 			}
 			else if ($content_type == 'number')
 			{
 				if ( ! is_numeric($data))
 				{
-					return lang('monktext_not_a_number');
+					return lang('not_a_number');
 				}
 			}
 			else if ($content_type == 'email')
@@ -776,21 +751,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 
 				if ( ! valid_email($data))
 				{
-					return lang('monktext_not_valid_email');
-				}
-			}
-			else if ($content_type == 'emails')
-			{
-				if ( ! ee()->form_validation->valid_emails($data))
-				{
-					return lang('monktext_not_valid_emails');
-				}
-			}
-			else if ($content_type == 'url')
-			{
-				if ( ! preg_match( '/^((https?|ftp)\:\/\/)?([a-z0-9+!*(),;?&=\$_.-]+(\:[a-z0-9+!*(),;?&=\$_.-]+)?@)?([a-z0-9-.]*)\.([a-z]{2,3})(\:[0-9]{2,5})?(\/([a-z0-9+\$_-]\.?)+)*\/?(\?[a-z+&\$_.-][a-z0-9;:@&%=+\/\$_.-]*)?(#[a-z_.-][a-z0-9+\$_.-]*)?/', $data))
-				{
-					return lang('monktext_not_a_url');
+					return lang('not_valid_email');
 				}
 			}
 			else if ($content_type == 'phone') {
