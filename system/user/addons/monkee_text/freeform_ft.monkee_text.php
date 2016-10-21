@@ -156,7 +156,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 		$text_field['maxlength'] = $maxlength;
 		if ($this->settings['field_title_text'] != '') { $text_field['title'] = $this->settings['field_title_text']; }
 		if ($this->settings['placeholder'] != '') { $text_field['placeholder'] = $this->settings['placeholder']; }
-		if ($this->settings['enable_autofocus'] == 'true') { $text_field['autofocus'] = ''; }
+		if ($this->settings['enable_autofocus'] == 'y') { $text_field['autofocus'] = ''; }
 		
 		if ($this->settings['css_content'] == "true" or $this->settings['css_name'] == "true" or $this->settings['css_type'] == "true" or $this->settings['css_custom'] != '') {
 			$class = '';
@@ -184,11 +184,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 		if ($this->settings['custom_param_4'] != '') { $text_field[$this->settings['custom_param_4']] = $this->settings['custom_value_4']; }
 		if ($this->settings['custom_param_5'] != '') { $text_field[$this->settings['custom_param_5']] = $this->settings['custom_value_5']; }
 		
-		if ($this->settings['js_confirm'] == "true" and $this->settings['js_event'] != "none" and $this->settings['js_action'] != '') { $text_field[$this->settings['js_event']] = stripslashes($this->settings['js_action']); }
-		
 		$output = form_input(array_merge($text_field, $attr));
-		
-		if ($this->settings['jquery_date'] == 'true' and ($this->settings['field_content_type'] == 'date' or $this->settings['field_content_type'] == 'any')  and ee()->uri->segment(1) != 'system') { $output .= "\n<script>$(function() { $( \"#freeform_" . $this->field_name . "\" ).datepicker(); }); </script>\n"; }
 		
 		return $output;
 	}
@@ -209,22 +205,14 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 
 	public function display_composer_field ($data = '', $params = array(), $attr = array())
 	{
-		$text_field = array();
-		
-		$text_field['name'] = $this->field_name;
-		$text_field['id'] = 'freeform_' . $this->field_name;
-		
-		if ($data == '' and !isset($params['default_value'])) {
-			$text_field['value'] = $this->settings['default_value'];
-		} else {
-			$text_field['value'] = $data;
-		}
-		
-		if ($this->settings['placeholder'] != '') { $text_field['placeholder'] = $this->settings['placeholder']; }
-		
-		$output = form_input(array_merge($text_field, $attr));
-		
-		return $output;
+		return form_input(array_merge(array(
+			'name'			=> $this->field_name,
+			'id'			=> 'freeform_' . $this->field_name,
+			'value'			=> $data,
+			'maxlength'		=> isset($this->settings['field_length']) ?
+								$this->settings['field_length'] :
+								$this->default_length
+		), $attr));$text_field = array();
 	}
 	//END display_composer_field
 
@@ -242,127 +230,133 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 
 	public function display_settings ($data = array())
 	{
+		$sub_settings = array();
+
+		$form_radios	= '';
+		
 		$content_type 	= isset($data['field_content_type']) ?
 							$data['field_content_type'] :
 							'any';
 		
-		$output = "<select name=\"field_content_type\">\n";
+		//Field Content Type
+		$choices = array();
+
 		foreach ($this->field_content_types as $type)
 		{
-			$output .= "<option value=\"" . $type . "\"";
-			if ($content_type == $type) { $output .= " selected"; }
-			$output .= ">" . lang($type) . "</option>\n";
+			$choices[$type] = $type;
 		}
-		$output .= "</select>\n";
 		
-		ee()->table->add_row(
-			lang('monktext_field_content_type', 'field_content_type') .
-				'<div class="subtext">' .
-					lang('monktext_field_content_type_desc') .
-				'</div>',
-			$output
+		$sub_settings['field_content_type'] = array(
+			'title'		=> 'monktext_field_content_type',
+			'desc'		=> 'monktext_field_content_type_desc',
+			'attrs'		=> array('id' => 'field_content_type'),
+			'fields'	=> array(
+				'field_content_type'	=> array(
+					'type'		=> 'inline_radio',
+					'choices'	=> $choices,
+					'value'		=> $content_type,
+					'required'	=> true
+				)
+			)
 		);
-
-		ee()->table->add_row(
-			lang('monktext_field_length', 'field_length') .
-				'<div class="subtext">' .
-					lang('monktext_field_length_desc') .
-				'</div>',
-			form_input(array(
-				'name'		=> 'field_length',
-				'id'		=> 'field_length',
-				'value'		=> isset($data['field_length']) ?
+		
+		//Field Length
+		$sub_settings['field_length'] = array(
+			'title'		=> 'monktext_field_length',
+			'desc'		=> 'monktext_field_length_desc',
+			'attrs'		=> array('id' => 'field_length'),
+			'fields'	=> array(
+				'field_length'	=> array(
+					'type'		=> 'text',
+					'value'		=> isset($data['field_length']) ?
 								$data['field_length'] :
 								$this->default_length,
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			))
+					'required'	=> true
+				)
+			)
 		);
 
-		$disallow_html_rendering	= ( ! isset($data['disallow_html_rendering']) OR
-						$data['disallow_html_rendering'] == '') ?
-							'y' :
-							$data['disallow_html_rendering'];
+		//Disallow HTML Rendering
+		$disallow_html_rendering	= (
+			empty($data['disallow_html_rendering']) OR
+			! in_array($data['disallow_html_rendering'], array('y', 'n'))
+		) ?
+			'y' :
+			$data['disallow_html_rendering'];
 
-		ee()->table->add_row(
-			lang('monktext_disallow_html_rendering', 'disallow_html_rendering') .
-			'<div class="subtext">' .
-				lang('monktext_disallow_html_rendering_desc') .
-			'</div>',
-			form_hidden('disallow_html_rendering', 'n') .
-			form_checkbox(array(
-				'id'	=> 'disallow_html_rendering',
-				'name'	=> 'disallow_html_rendering',
-				'value'		=> 'y',
-				'checked' 	=> $disallow_html_rendering == 'y'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_enable', 'disallow_html_rendering')
+		$sub_settings['disallow_html_rendering'] = array(
+			'title'		=> 'monktext_disallow_html_rendering',
+			'desc'		=> 'monktext_disallow_html_rendering_desc',
+			'attrs'		=> array('id' => 'disallow_html_rendering'),
+			'fields'	=> array(
+				'disallow_html_rendering'	=> array(
+					'type'		=> 'yes_no',
+					'default'	=> 'y',
+					'value'		=> $disallow_html_rendering,
+					'required'	=> true
+				)
+			)
 		);
 			
-		//placeholder
+		//Placeholder
 		$placeholder 		= ( ! isset($data['placeholder']) OR
 						$data['placeholder'] == '') ?
 						'' :
 						$data['placeholder'];
-							
-		ee()->table->add_row(
-			lang('monktext_placeholder', 'placeholder') .
-				'<div class="subtext">' .
-					lang('monktext_placeholder_desc') .
-				'</div>',
-			form_input(array(
-				'name'		=> 'placeholder',
-				'id'		=> 'placeholder',
-				'value'		=> $placeholder,
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			))
+						
+		$sub_settings['placeholder'] = array(
+			'title'		=> 'monktext_placeholder',
+			'desc'		=> 'monktext_placeholder_desc',
+			'attrs'		=> array('id' => 'placeholder'),
+			'fields'	=> array(
+				'placeholder'	=> array(
+					'type'		=> 'text',
+					'value'		=> $placeholder,
+					'required'	=> false
+				)
+			)
 		);
 		
-		//default value
+		//Default Value
 		$default_value 		= ( ! isset($data['default_value']) OR
 						$data['default_value'] == '') ?
 						'' :
 						$data['default_value'];
-							
-		ee()->table->add_row(
-			lang('monktext_default_value', 'default_value') .
-				'<div class="subtext">' .
-					lang('monktext_default_value_desc') .
-				'</div>',
-			form_input(array(
-				'name'		=> 'default_value',
-				'id'		=> 'default_value',
-				'value'		=> $default_value,
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			))
+						
+		$sub_settings['default_value'] = array(
+			'title'		=> 'monktext_default_value',
+			'desc'		=> 'monktext_default_value_desc',
+			'attrs'		=> array('id' => 'default_value'),
+			'fields'	=> array(
+				'default_value'	=> array(
+					'type'		=> 'text',
+					'value'		=> $default_value,
+					'required'	=> false
+				)
+			)
 		);
 		
-		//autofocus
+		//Autofocus
 		$enable_autofocus 		= ( ! isset($data['enable_autofocus']) OR
 						$data['enable_autofocus'] == '') ?
-							'false' :
+							'n' :
 							$data['enable_autofocus'];
 							
-		ee()->table->add_row(
-			lang('monktext_enable_autofocus', 'enable_autofocus') .
-			'<div class="subtext">' .
-				lang('monktext_enable_autofocus_desc') .
-			'</div>',
-			form_hidden('enable_autofocus', 'n') .
-			form_checkbox(array(
-				'id'	=> 'enable_autofocus',
-				'name'	=> 'enable_autofocus',
-				'value'		=> 'true',
-				'checked' 	=> $enable_autofocus == 'true'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_enable', 'enable_autofocus')
+		$sub_settings['enable_autofocus '] = array(
+			'title'		=> 'monktext_enable_autofocus',
+			'desc'		=> 'monktext_enable_autofocus_desc',
+			'attrs'		=> array('id' => 'enable_autofocus'),
+			'fields'	=> array(
+				'enable_autofocus'	=> array(
+					'type'		=> 'yes_no',
+					'default'	=> 'n',
+					'value'		=> $enable_autofocus,
+					'required'	=> false
+				)
+			)
 		);
 		
-		//title field
+		//Title Field
 		$title_value 		= ( ! isset($data['field_title']) OR
 						$data['field_title'] == '') ? 'field_desc' : $data['field_title'];
 						
@@ -371,30 +365,34 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 						'' :
 						$data['field_title_text'];
 						
-		$output = form_radio(array('name' => 'field_title', 'id' => 'field_none', 'value' => 'none', 'checked' => ($title_value == 'none'), 'onclick' => "$('#field_title_custom').attr('disabled', '');"));
-		$output .= NBS . NBS . lang('monktext_field_none', 'field_none') . NBS . NBS . NBS . NBS . "\n";
-		
-		$output .= form_radio(array('name' => 'field_title', 'id' => 'field_label', 'value' => 'field_label', 'checked' => ($title_value == 'field_label'), 'onclick' => "$('#field_title_custom').attr('disabled', '');"));
-		$output .= NBS . NBS . lang('monktext_field_label', 'field_label') . NBS . NBS . NBS . NBS . "\n";
-		
-		$output .= form_radio(array('name' => 'field_title', 'id' => 'field_desc', 'value' => 'field_desc', 'checked' => ($title_value == 'field_desc'), 'onclick' => "$('#field_title_custom').attr('disabled', '');"));
-		$output .= NBS . NBS . lang('monktext_field_desc', 'field_desc') . NBS . NBS . NBS . NBS . "\n";
-		
-		$output .= form_radio(array('name' => 'field_title', 'id' => 'field_custom', 'value' => 'field_custom', 'checked' => ($title_value == 'field_custom'), 'onclick' => "$('#field_title_custom').removeAttr('disabled');"));
-		$output .= NBS . NBS . lang('monktext_field_custom', 'field_custom') . NBS . NBS . NBS . NBS . "\n";
-		$output .= "<input type='text' name='field_title_custom' id='field_title_custom' placeholder='" . lang('monktext_field_title_custom') . "' value='$title_custom_value'";
-		if ($title_value != 'field_custom') { $output .= " disabled"; }
-		$output .= " />\n";
-		
-		ee()->table->add_row(
-			lang('monktext_field_title', 'field_title') .
-				'<div class="subtext">' .
-					lang('monktext_field_title_desc') .
-				'</div>',
-			$output
+		$title_choices = array(
+			'none' => 'monktext_field_none',
+			'field_label' => 'monktext_field_label',
+			'field_desc' => 'monktext_field_desc',
+			'field_custom' => 'monktext_field_custom'
 		);
 		
-		//css class
+		$sub_settings['field_title'] = array(
+			'title'		=> 'monktext_field_title',
+			'desc'		=> 'monktext_field_title_desc',
+			'attrs'		=> array('id' => 'field_title'),
+			'fields'	=> array(
+				'field_title'	=> array(
+					'type'		=> 'inline_radio',
+					'choices'	=> $title_choices,
+					'value'		=> $title_value,
+					'required'	=> false
+				),
+				'field_title_custom'	=> array(
+					'type'		=> 'text',
+					'value'		=> $title_custom_value,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_field_title_custom')
+				)
+			)
+		);
+		
+		//CSS Class
 		$css_content 		= ( ! isset($data['css_content']) OR
 						$data['css_content'] == '') ?
 							'false' :
@@ -414,50 +412,37 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 						$data['css_custom'] == '') ?
 						'' :
 						$data['css_custom'];
-							
-		ee()->table->add_row(
-			lang('monktext_css_classes', 'css_classes') .
-			'<div class="subtext">' .
-				lang('monktext_css_classes_desc') .
-			'</div>',
-			form_hidden('css_content', 'n') .
-			form_checkbox(array(
-				'id'	=> 'css_content',
-				'name'	=> 'css_content',
-				'value'		=> 'true',
-				'checked' 	=> $css_content == 'true'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_css_content', 'css_content') .
-			'&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_hidden('css_name', 'n') .
-			form_checkbox(array(
-				'id'	=> 'css_name',
-				'name'	=> 'css_name',
-				'value'		=> 'true',
-				'checked' 	=> $css_name == 'true'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_css_name', 'css_name') .
-			'&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_hidden('css_type', 'n') .
-			form_checkbox(array(
-				'id'	=> 'css_type',
-				'name'	=> 'css_type',
-				'value'		=> 'true',
-				'checked' 	=> $css_type == 'true'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_css_type', 'css_type') .
-			'&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'css_custom',
-				'id'		=> 'css_custom',
-				'value'		=> $css_custom,
-				'placeholder'	=> lang('monktext_css_custom'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			))
+		
+		$sub_settings['css_classes'] = array(
+			'title'		=> 'monktext_css_classes',
+			'desc'		=> 'monktext_css_classes_desc',
+			'attrs'		=> array('id' => 'css_classes'),
+			'fields'	=> array(
+				'css_content'	=> array(
+					'type'		=> 'checkbox',
+					'choices'	=> array('true' => lang('monktext_css_content')),
+					'value'		=> $css_content,
+					'required'	=> false
+				),
+				'css_name'	=> array(
+					'type'		=> 'checkbox',
+					'choices'	=> array('true' => lang('monktext_css_name')),
+					'value'		=> $css_name,
+					'required'	=> false
+				),
+				'css_type'	=> array(
+					'type'		=> 'checkbox',
+					'choices'	=> array('true' => lang('monktext_css_type')),
+					'value'		=> $css_type,
+					'required'	=> false
+				),
+				'css_custom'	=> array(
+					'type'		=> 'text',
+					'value'		=> $css_custom,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_css_custom')
+				)
+			)
 		);
 		
 		//custom parameters
@@ -509,175 +494,123 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 		$custom_value_5		= ( ! isset($data['custom_value_5']) OR
 						$data['custom_value_5'] == '') ?
 							'' :
-							$data['custom_value_5'];	
+							$data['custom_value_5'];					
 		
-		ee()->table->add_row(
-			lang('monktext_custom_params', 'custom_params') .
-			'<div class="subtext">' .
-				lang('monktext_custom_params_desc') .
-			'</div>',
-			'<p>'.
-			form_input(array(
-				'name'		=> 'custom_param_1',
-				'id'		=> 'custom_param_1',
-				'value'		=> $custom_param_1,
-				'placeholder'	=> lang('monktext_custom_place'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'custom_value_1',
-				'id'		=> 'custom_value_1',
-				'value'		=> $custom_value_1,
-				'placeholder'	=> lang('monktext_custom_value'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '</p><p>' .
-			form_input(array(
-				'name'		=> 'custom_param_2',
-				'id'		=> 'custom_param_2',
-				'value'		=> $custom_param_2,
-				'placeholder'	=> lang('monktext_custom_place'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'custom_value_2',
-				'id'		=> 'custom_value_2',
-				'value'		=> $custom_value_2,
-				'placeholder'	=> lang('monktext_custom_value'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)). '</p><p>' .
-			form_input(array(
-				'name'		=> 'custom_param_3',
-				'id'		=> 'custom_param_3',
-				'value'		=> $custom_param_3,
-				'placeholder'	=> lang('monktext_custom_place'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'custom_value_3',
-				'id'		=> 'custom_value_3',
-				'value'		=> $custom_value_3,
-				'placeholder'	=> lang('monktext_custom_value'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)). '</p><p>' .
-			form_input(array(
-				'name'		=> 'custom_param_4',
-				'id'		=> 'custom_param_4',
-				'value'		=> $custom_param_4,
-				'placeholder'	=> lang('monktext_custom_place'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'custom_value_4',
-				'id'		=> 'custom_value_4',
-				'value'		=> $custom_value_4,
-				'placeholder'	=> lang('monktext_custom_value'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)). '</p><p>' .
-			form_input(array(
-				'name'		=> 'custom_param_5',
-				'id'		=> 'custom_param_5',
-				'value'		=> $custom_param_5,
-				'placeholder'	=> lang('monktext_custom_place'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input(array(
-				'name'		=> 'custom_value_5',
-				'id'		=> 'custom_value_5',
-				'value'		=> $custom_value_5,
-				'placeholder'	=> lang('monktext_custom_value'),
-				'maxlength'	=> '250',
-				'size'		=> '50',
-			)) . '</p>'
+		$sub_settings['custom_params_1'] = array(
+			'title'		=> 'monktext_custom_param_1',
+			'desc'		=> 'monktext_custom_params_desc',
+			'attrs'		=> array('id' => 'custom_params_1'),
+			'caution'	=> true,
+			'fields'	=> array(
+				'custom_param_1'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_param_1,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_place')
+				),
+				'custom_value_1'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_value_1,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_value')
+				)
+			)
 		);
 		
-		//javascript
-		$js_confirm	= ( ! isset($data['js_confirm']) OR
-						$data['js_confirm'] == '') ?
-							'false' :
-							$data['js_confirm'];
-							
-		$js_event 	= isset($data['js_event']) ?
-							$data['js_event'] :
-							'none';
-							
-		$js_action 		= ( ! isset($data['js_action']) OR
-						$data['js_action'] == '') ?
-						'' :
-						$data['js_action'];
-		
-		$output = "<select name=\"js_event\" id=\"js_event\"";
-		if ($js_confirm == "false") { $output .= ' disabled'; }
-		$output .= ">\n";
-		foreach ($this->javascript_events as $event)
-		{
-			$output .= "<option value=\"" . $event . "\"";
-			if ($js_confirm == "true") { if ($js_event == $event) { $output .= " selected"; } }
-			$output .= ">" . $event . "</option>\n";
-		}
-		$output .= "</select>\n";
-		
-		$text_field = array(
-			'name'		=> 'js_action',
-			'id'		=> 'js_action',
-			'value'		=> $js_action,
-			'placeholder'	=> lang('monktext_js_action'),
-			'maxlength'	=> '250',
-			'size'		=> '50'
+		$sub_settings['custom_params_2'] = array(
+			'title'		=> 'monktext_custom_param_2',
+			'desc'		=> 'monktext_custom_params_desc',
+			'attrs'		=> array('id' => 'custom_params_2'),
+			'caution'	=> true,
+			'fields'	=> array(
+				'custom_param_2'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_param_2,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_place')
+				),
+				'custom_value_2'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_value_2,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_value')
+				)
+			)
 		);
 		
-		if ($js_confirm == "false") { $text_field['disabled'] = ''; }
-		
-		ee()->table->add_row(
-			lang('monktext_js_event', 'js_event') .
-				'<div class="subtext">' .
-					lang('monktext_js_event_desc') .
-				'</div>',
-			form_hidden('js_confirm', 'n') .
-			form_checkbox(array(
-				'id'	=> 'js_confirm',
-				'name'	=> 'js_confirm',
-				'value'		=> 'true',
-				'checked' 	=> $js_confirm == 'true',
-				'onclick'	=> "$('#js_event, #js_action').attr('disabled',!$('#js_event').attr('disabled'))"
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_js_confirm', 'js_confirm') .
-			'<br /><br />' .
-			$output .
-			'&nbsp;&nbsp;&nbsp;&nbsp;' .
-			form_input($text_field)
+		$sub_settings['custom_params_3'] = array(
+			'title'		=> 'monktext_custom_param_3',
+			'desc'		=> 'monktext_custom_params_desc',
+			'attrs'		=> array('id' => 'custom_params_3'),
+			'caution'	=> true,
+			'fields'	=> array(
+				'custom_param_3'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_param_3,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_place')
+				),
+				'custom_value_3'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_value_3,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_value')
+				)
+			)
 		);
 		
-		//jQuery datepicker
-		$jquery_date 		= ( ! isset($data['jquery_date']) OR
-						$data['jquery_date'] == '') ?
-							'false' :
-							$data['jquery_date'];
-							
-		ee()->table->add_row(
-			lang('monktext_jquery_date', 'jquery_date') .
-			'<div class="subtext">' .
-				lang('monktext_jquery_date_desc') .
-			'</div>',
-			form_hidden('jquery_date', 'n') .
-			form_checkbox(array(
-				'id'	=> 'jquery_date',
-				'name'	=> 'jquery_date',
-				'value'		=> 'false',
-				'checked' 	=> $jquery_date == 'true'
-			)) .
-			'&nbsp;&nbsp;' .
-			lang('monktext_enable', 'jquery_date')
+		$sub_settings['custom_params_4'] = array(
+			'title'		=> 'monktext_custom_param_4',
+			'desc'		=> 'monktext_custom_params_desc',
+			'attrs'		=> array('id' => 'custom_params_4'),
+			'caution'	=> true,
+			'fields'	=> array(
+				'custom_param_4'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_param_4,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_place')
+				),
+				'custom_value_4'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_value_4,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_value')
+				)
+			)
 		);
+		
+		$sub_settings['custom_params_5'] = array(
+			'title'		=> 'monktext_custom_param_5',
+			'desc'		=> 'monktext_custom_params_desc',
+			'attrs'		=> array('id' => 'custom_params_5'),
+			'caution'	=> true,
+			'fields'	=> array(
+				'custom_param_5'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_param_5,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_place')
+				),
+				'custom_value_5'	=> array(
+					'type'		=> 'text',
+					'value'		=> $custom_value_5,
+					'required'	=> false,
+					'placeholder'	=> lang('monktext_custom_value')
+				)
+			)
+		);
+		
+		//Return
+		$settings = array(
+			$this->field_name => array(
+				'label'		=> $this->info['name'],
+				'group'		=> $this->field_name,
+				'settings'	=> $sub_settings
+			)
+		);
+
+		return $settings;
 	}
 	//END display_settings
 
@@ -729,17 +662,15 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			),
 			'placeholder' => ee()->input->get_post('placeholder'),
 			'default_value' => ee()->input->get_post('default_value'),
-			'enable_autofocus'	=> (ee()->input->get_post('enable_autofocus') == 'n' ? 'false' : 'true'
+			'enable_autofocus'	=> (ee()->input->get_post('enable_autofocus') == 'n' ? 'n' : 'y'
 			),
 			'field_title' => ee()->input->get_post('field_title'),
 			'field_title_text' => $title,
-			'jquery_date'	=> (ee()->input->get_post('jquery_date') == 'n' ? 'false' : 'true'
+			'css_content'	=> (ee()->input->get_post('css_content') == '' ? 'false' : 'true'
 			),
-			'css_content'	=> (ee()->input->get_post('css_content') == 'n' ? 'false' : 'true'
+			'css_name'	=> (ee()->input->get_post('css_name') == '' ? 'false' : 'true'
 			),
-			'css_name'	=> (ee()->input->get_post('css_name') == 'n' ? 'false' : 'true'
-			),
-			'css_type'	=> (ee()->input->get_post('css_type') == 'n' ? 'false' : 'true'
+			'css_type'	=> (ee()->input->get_post('css_type') == '' ? 'false' : 'true'
 			),
 			'css_custom' => ee()->input->get_post('css_custom'),
 			'custom_param_1' => ee()->input->get_post('custom_param_1'),
@@ -751,11 +682,7 @@ class Monkee_text_freeform_ft extends Freeform_base_ft {
 			'custom_param_4' => ee()->input->get_post('custom_param_4'),
 			'custom_value_4' => ee()->input->get_post('custom_value_4'),
 			'custom_param_5' => ee()->input->get_post('custom_param_5'),
-			'custom_value_5' => ee()->input->get_post('custom_value_5'),
-			'js_confirm'	=> (ee()->input->get_post('js_confirm') == 'n' ? 'false' : 'true'
-			),
-			'js_event' => ee()->input->get_post('js_event'),
-			'js_action' => ee()->input->get_post('js_action')
+			'custom_value_5' => ee()->input->get_post('custom_value_5')
 		);
 	}
 	//END save_settings
